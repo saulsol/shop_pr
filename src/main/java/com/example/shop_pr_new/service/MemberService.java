@@ -18,7 +18,7 @@ public class MemberService {
         return memberRepository.save(member);
     }
 
-
+    // TODO : 예외처리
     private void validateDuplicateMember(Member member){
         Member findMember = memberRepository.findByEmail(member.getEmail());
         if(findMember != null){
