@@ -1,9 +1,14 @@
 package com.example.shop_pr_new.config;
 
+import com.example.shop_pr_new.service.MemberService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -11,7 +16,11 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 @Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
+
+    private final MemberService userDetailsService;
+
 
     // filterChain 을 리턴하는 메소드 구현
     @Bean
@@ -28,6 +37,9 @@ public class SecurityConfig {
                 .logoutSuccessUrl("/")
         ;
 
+        // form 로그인 시 POST 요청으로 유저의 정보를 받아서 인증할 필요가 없다.
+        // 시큐리티가 필터에서 가로채서 인증을 진행하기 때문에 위와 같이 설정하면 된다.
+
         httpSecurity.authorizeRequests()
                 .mvcMatchers("/css/**", "/js/**", "/img/**").permitAll()
                 .mvcMatchers("/", "/members/**", "/item/**", "/images/**").permitAll()
@@ -42,7 +54,22 @@ public class SecurityConfig {
 
 
     @Bean
-    public PasswordEncoder passwordEncoder(){
+    public BCryptPasswordEncoder passwordEncoder(){
         return new BCryptPasswordEncoder();
     }
+
+    @Bean
+    public AuthenticationManager authenticationManager(HttpSecurity httpSecurity, BCryptPasswordEncoder passwordEncoder) throws Exception{
+        return httpSecurity.getSharedObject(AuthenticationManagerBuilder.class)
+                .userDetailsService(userDetailsService)
+                .passwordEncoder(passwordEncoder)
+                .and()
+                .build();
+    }
+
+    // AuthenticationManager는 loadUserByUsername()을 통해 DB에서
+    // 갖고와진 유저 인증 객체로 컨텍스트에 저장할 인증객체(Authentication) 객체를 생성하는 역할을 위임받는다.
+
+
+
 }
